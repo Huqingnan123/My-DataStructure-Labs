@@ -1,0 +1,4 @@
+Vertexs information:
+(key:1, value:A) (key:2, value:B) (key:3, value:C) (key:4, value:D) (key:6, value:Q) (key:5, value:E) 
+Arcs information:
+(start_key:1,end_key:2)(start_key:1,end_key:3)(start_key:1,end_key:4)(start_key:1,end_key:6)(start_key:3,end_key:5)(start_key:4,end_key:5)
