@@ -11,7 +11,7 @@ FILE* fp;
 int main()
 {
 	GraphArray = (Graph*)malloc(MAX_GRAPH_NUM * sizeof(Graph));    //用于管理多个图(只存放各个图的基址指针）
-	Graph* G = &GraphArray[0];					//必须要用指针T“传参”，去操作T所指地址上的GraphArray[index]，才会保存后续对表的操作
+	Graph* G = &GraphArray[0];					//必须要用指针G“传参”，去操作G所指地址上的GraphArray[index]，才会保存后续对图的操作
 	G->isInitial = FALSE;
 	int option = 1;
 	int key, v_key, w_key, Vex_number, Arc_number, status, start_key, end_key;
@@ -289,7 +289,7 @@ int main()
 			printf("You've chosen function SelectGraph(), which chooses another graph to operate.\n");
 			printf("Please input a number [1-10] to select a graph to operate,if you input a bigger number,it's OK: ");
 			scanf("%d", &index);
-			if (SelectGraph(&G, index) == OK)      //这里必须要&L，才能真正对T（树指针）起作用（二级指针）
+			if (SelectGraph(&G, index) == OK)      //这里必须要&G，才能真正对G（图指针）起作用（二级指针）
 				printf("You have selected number %d graph to operate now!\n", index);
 			getchar();
 			break;
@@ -310,7 +310,7 @@ status InitialGraph(Graph* G)
 	if (G->isInitial)
 		return ERROR;
 	G->ID = index;
-	G->isInitial = TRUE;
+	G->isInitial = TRUE;     //关键将isInitial置为TRUE
 	G->Vex_number = 0;
 	G->Arc_number = 0;
 	return OK;
@@ -322,9 +322,9 @@ status CreateGraph(Graph* G, Vertex* Vertex_array, Arc* Arc_array, int Vex_numbe
 		return UNINITIAL;
 	int status = OK;
 	for (int i = 0; i < Vex_number; i++)
-		status = InsertVex(G, Vertex_array[i]);
+		status = InsertVex(G, Vertex_array[i]);									//调用InsertVex函数将所有顶点都插入到图中
 	for (int j = 0; j < Arc_number; j++)
-		status = InsertArc(G, Arc_array[j].start_key, Arc_array[j].end_key);
+		status = InsertArc(G, Arc_array[j].start_key, Arc_array[j].end_key);	//调用InsertArc函数将所有弧都插入到图的两个顶点间
 	if (status != OK)
 	{
 		G->Vex_number = 0;
@@ -340,16 +340,16 @@ status DestroyGraph(Graph* G)
 {
 	if (!G->isInitial)
 		return UNINITIAL;
-	for (int i = 0; i < G->Vex_number; i++)
+	for (int i = 0; i < G->Vex_number; i++)              //遍历图中所有顶点，将其邻接表中的所有邻接点都进行free即可
 	{
-		while (G->vertices[i].FirstArc != NULL)
+		while (G->vertices[i].FirstArc != NULL) 
 		{ 
 			Arcnode* Temp = G->vertices[i].FirstArc;
 			G->vertices[i].FirstArc = G->vertices[i].FirstArc->NextArc;
 			free(Temp);
 		}
 	}
-	G->Vex_number = 0;
+	G->Vex_number = 0;									 //再将Vex和Arc数量置0，isInitial置为FALSE
 	G->Arc_number = 0;
 	G->isInitial = FALSE;
 	return OK;
@@ -362,7 +362,7 @@ status LocateVex(Graph* G, int key)
 	for (int i = 0; i < G->Vex_number; i++)
 	{
 		if (G->vertices[i].data.key == key)
-			return i + 1;
+			return i + 1;                                //若定位成功，返回顶点在头结点数组中的位序（至少为1），否则返回0
 	}
 	return 0;
 }
@@ -371,7 +371,7 @@ status PutVex(Graph* G, int key, char value)
 {
 	if (!G->isInitial)
 		return UNINITIAL;
-	int position = LocateVex(G, key);
+	int position = LocateVex(G, key);                     //调用LocateVex函数进行定位再赋值即可
 	if (!position)
 		return ERROR;
 	G->vertices[position - 1].data.value = value;
@@ -383,7 +383,7 @@ status FirstAdjVex(Graph* G, int key)
 	if (!G->isInitial)
 		return UNINITIAL;
 	int position = LocateVex(G, key);
-	if (G->vertices[position - 1].FirstArc)
+	if (G->vertices[position - 1].FirstArc)				  //当该顶点存在第一个邻接点时，就调用LocateVex函数进行定位返回位序即可
 		return LocateVex(G, G->vertices[position - 1].FirstArc->key);
 	else
 		return 0;
@@ -400,12 +400,12 @@ status NextAdjVex(Graph* G, int v_key, int w_key)
 		Arcnode* Temp = G->vertices[v_pos - 1].FirstArc;
 		while (Temp != NULL && Temp->key != G->vertices[w_pos - 1].data.key)
 			Temp = Temp->NextArc;
-		if (Temp == NULL)
+		if (Temp == NULL)								 //当邻接点中没有w点时，返回ERROR
 			return ERROR;
-		if (Temp->NextArc == NULL)
+		if (Temp->NextArc == NULL)                       //当w是v的最后一个邻接点时，返回0
 			return 0;
 		else
-			return LocateVex(G,Temp->NextArc->key);
+			return LocateVex(G,Temp->NextArc->key);		 //否则就可以对w之后的邻接点进行定位操作，返回其位序
 	}
 	return ERROR;
 }
@@ -414,10 +414,10 @@ status InsertVex(Graph* G, Vertex v)
 {
 	if (!G->isInitial)
 		return UNINITIAL;
-	if (LocateVex(G, v.key))
+	if (LocateVex(G, v.key))							 //当顶点v已存在时，返回ERROR
 		return ERROR;
 	G->vertices[G->Vex_number].data = v;
-	G->vertices[G->Vex_number].FirstArc = NULL;
+	G->vertices[G->Vex_number].FirstArc = NULL;          //否则直接将顶点v顺次插入到头结点数组的末尾
 	G->Vex_number++;
 	return OK;
 }
@@ -427,17 +427,17 @@ status DeleteVex(Graph* G, Vertex v, int key)
 	if (!G->isInitial)
 		return UNINITIAL;
 	int position = LocateVex(G, key);
-	while (G->vertices[position - 1].FirstArc!= NULL)
+	while (G->vertices[position - 1].FirstArc!= NULL)     //先把由顶点v发出的弧都free
 	{
 		Arcnode* Temp1 = G->vertices[position - 1].FirstArc;
 		G->vertices[position - 1].FirstArc = G->vertices[position - 1].FirstArc->NextArc;
 		free(Temp1);
 		G->Arc_number--;
 	}
-	for (int i = position - 1; i < G->Vex_number-1; i++)   //头结点列表后面的顶点均前移一位
+	for (int i = position - 1; i < G->Vex_number-1; i++)   //头结点列表后面的顶点均前移一位，相当于删除了顶点v
 		G->vertices[i] = G->vertices[i + 1];
 	G->Vex_number--;
-	for (int i = 0; i < G->Vex_number; i++)
+	for (int i = 0; i < G->Vex_number; i++)				//再遍历头结点数组把有关v的邻接关系都删除
 	{
 		Arcnode* curArc = G->vertices[i].FirstArc;
 		Arcnode* preArc = G->vertices[i].FirstArc;
@@ -446,13 +446,13 @@ status DeleteVex(Graph* G, Vertex v, int key)
 			preArc = curArc;
 			curArc = curArc->NextArc;
 		}
-		if (curArc!=NULL && curArc == preArc)                //说明第一个弧结点就匹配到了待删除结点key值，需要删除第一条弧
+		if (curArc!=NULL && curArc == preArc)           //说明第一个弧结点就匹配到了待删除结点key值，需要删除第一条弧
 		{
 			G->vertices[i].FirstArc = G->vertices[i].FirstArc->NextArc;
 			free(preArc);
 			G->Arc_number--;
 		}
-		else if(curArc != NULL)				 //说明在中间的弧结点匹配成功，改变待删除弧结点前后的指针关系
+		else if(curArc != NULL)							//说明在中间的弧结点匹配成功，改变待删除弧结点前后的指针关系
 		{
 			preArc->NextArc = curArc->NextArc;
 			free(curArc);
@@ -470,7 +470,7 @@ status InsertArc(Graph* G, int start_key, int end_key)
 		return ERROR;
 	int position = LocateVex(G, start_key);
 	Arcnode* Temp = G->vertices[position - 1].FirstArc;
-	if (Temp == NULL)                                         //当没有邻接点时，直接添加
+	if (Temp == NULL)                                         //当没有邻接点时，直接添加为第一个邻接点，否则需找到最后一个邻接点
 	{
 		G->vertices[position - 1].FirstArc = (Arcnode*)malloc(sizeof(Arcnode));
 		G->vertices[position - 1].FirstArc->key = end_key;
@@ -480,7 +480,7 @@ status InsertArc(Graph* G, int start_key, int end_key)
 	{
 		while (Temp->key != end_key && Temp->NextArc != NULL)     //当Temp指到最后一个邻接点时退出循环，对Temp->NextArc开辟新空间
 			Temp = Temp->NextArc;
-		if (Temp->key == end_key)								  //若因为start_key顶点有邻接点的key与要插入的顶点key相同而退出循环，则报错，插入弧失败
+		if (Temp->key == end_key)								  //若因为start_key顶点有邻接点的key与要插入的顶点key相同而退出循环，则插入弧失败
 			return ERROR;
 		Temp->NextArc = (Arcnode*)malloc(sizeof(Arcnode));
 		Temp->NextArc->key = end_key;
@@ -502,9 +502,9 @@ status DeleteArc(Graph* G, int start_key, int end_key)
 		preArc = curArc;
 		curArc = curArc->NextArc;
 	}
-	if (curArc == NULL)             //表明start_key到end_key的弧并不存在！
+	if (curArc == NULL)					     //表明start_key到end_key的弧并不存在！
 		return ERROR;
-	if (curArc == preArc)                //说明第一个弧结点就匹配到了待删除结点key值，需要删除第一条弧
+	if (curArc == preArc)                    //说明第一个弧结点就匹配到了待删除结点key值，需要删除第一条弧
 	{
 		G->vertices[position - 1].FirstArc = G->vertices[position - 1].FirstArc->NextArc;
 		free(preArc);
@@ -533,7 +533,7 @@ status DFSTraverse(Graph* G, status(*visit)(Vertex v))
 		visited[i] = FALSE;
 	for (int i = 0; i < G->Vex_number; i++)
 		if (!visited[i])
-			DFS(G, i+1 ,visit);
+			DFS(G, i+1 ,visit);                  //递归调用DFS函数，i+1为在头结点数组中的位序
 	return OK;
 }
 
@@ -592,8 +592,8 @@ status InputFromFile(char* filename1, char* filename2, Graph* G)
 	{
 		printf("Open Error!\n");
 		return ERROR;
-	}
-	while (fscanf(fp1, "(%d:%c) ", &((Vertex_array + i)->key), &((Vertex_array + i)->value)) == 2)        //先将文件中的keyֵ和data导入到Preorder_key和Preorder_data数组中
+	}													    //先从文件中读 点集和弧集 到Vertex_array和Arc_array中
+	while (fscanf(fp1, "(%d:%c) ", &((Vertex_array + i)->key), &((Vertex_array + i)->value)) == 2)        
 		i++;
 	while (fscanf(fp2, "(%d,%d) ", &((Arc_array + j)->start_key), &((Arc_array+j)->end_key)) == 2)
 		j++;
@@ -615,11 +615,11 @@ status OutputToFile(char* filename, Graph* G)
 	char vertex_info[30] = "Vertexs information:";
 	char arc_info[30] = "Arcs information:";
 	fprintf(fp, "%s\n", vertex_info);
-	BFSTraverse(G, Print_To_File);
+	BFSTraverse(G, Print_To_File);               //调用BFS遍历输出顶点信息到文件中
 	fprintf(fp, "\n%s\n", arc_info);
 	int start_key, end_key;
 	Arcnode* Temp;
-	for (int i = 0; i < G->Vex_number; i++)
+	for (int i = 0; i < G->Vex_number; i++)      //再遍历头结点数组和相应的邻接表输出所有的弧的信息
 	{
 		start_key = G->vertices[i].data.key;
 		Temp = G->vertices[i].FirstArc;
@@ -642,7 +642,7 @@ status Print_To_File(Vertex v)
 
 status SelectGraph(Graph** G, int index)
 {
-	if (index > MAX_GRAPH_NUM)     //当图的数量超过初始最大值100时，需要增加空间
+	if (index > MAX_GRAPH_NUM)     //当图的数量超过初始最大值10时，需要增加空间
 	{
 		Graph* newGraphArray;
 		newGraphArray = (Graph*)realloc(GraphArray, (MAX_GRAPH_NUM + GRAPH_INCREMENT) * sizeof(Graph));
